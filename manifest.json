@@ -1,0 +1,14 @@
+{
+    "manifest_version": 2,
+    "name": "Perf Marker",
+    "version": "1.0",
+    "description": "Marker for key page events, clicks and scrolling",
+    "icons": {
+        "48": "icon.svg"
+    },
+    "content_scripts": [{
+        "matches": ["<all_urls>"],
+        "js": ["perf-marker-content-script.js"],
+        "run_at": "document_start"
+    }]
+}
