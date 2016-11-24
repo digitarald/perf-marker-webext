@@ -45,37 +45,35 @@ window.addEventListener('load', (event) => {
     mark('load', timings.loadEventStart, {timings: timings.toJSON()});
 });
 
-window.addEventListener('pageshow', (event) => {
-    mark('pageShow', event.timeStamp, {persisted: event.persisted});
-}, passiveOpts);
+window.addEventListener('abort', (event) => {
+    mark('abort', event.timeStamp);
+}, false);
 
-window.addEventListener('pagehide', (event) => {
-    mark('pageHide', event.timeStamp, {persisted: event.persisted});
-}, passiveOpts);
+document.addEventListener('visibilitychange', (event) => {
+    mark('visibilityChange', event.timeStamp, {state: document.visibilityState});
+}, false);
 
 let scrollPoll = 0;
-let scrollDistance = 0;
-let scrollLastTop = 0;
+let scrollStart = 0;
+let scrollEnd = 0;
 let scrollLastTime = 0;
 const updateScrollDistance = () => {};
-const scrollEnd = () => {
+const scrollDidEnd = () => {
     scrollPoll = 0;
-    mark('inputScrollEnd', scrollLastTime, {distance: scrollDistance});
-    scrollDistance = 0;
+    mark('inputScrollEnd', scrollLastTime, {top: scrollEnd});
+    scrollStart = scrollEnd;
 };
 
 document.addEventListener('scroll', (event) => {
     scrollLastTime = event.timeStamp || performance.now();
     if (scrollPoll === 0) {
-        mark('inputScroll', scrollLastTime);
+        mark('inputScroll', scrollLastTime, {top: scrollStart});
     } else {
         clearTimeout(scrollPoll);
     }
-    let top = event.pageY;
-    scrollDistance += Math.abs(scrollLastTop - top);
-    scrollLastTop = top;
+    scrollEnd = event.pageY;
     // 50ms should cover for slower firing passive listener
-    scrollPoll = setTimeout(scrollEnd, 50);
+    scrollPoll = setTimeout(scrollDidEnd, 50);
 }, passiveOpts);
 
 window.addEventListener('mousemove', (event) => {
@@ -88,7 +86,7 @@ document.addEventListener('click', (event) => {
 
 document.addEventListener('keydown', (event) => {
     const key = event.key;
-    if (/^(control|shift|meta)$/i.test(key)) {
+    if (['Control', 'Shift', 'Meta'].includes(key)) {
         return;
     }
     mark('inputKey', event.timeStamp, {key: key});
